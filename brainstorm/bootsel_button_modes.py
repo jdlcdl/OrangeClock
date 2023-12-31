@@ -13,9 +13,9 @@ brainstorm:
 """
 
 all_modes = (
-    ("blockheight", "blocks to halving"),
-    ("sats per euro", "europrice", "sats zapped", "euros zapped"),
-    ("sat-fees", "euro-fees")
+    ("Block Time", "Halving Countdown", "Nostr Zap Counter"),
+    ("Moscow Time (satsymbol icon)", "Moscow Time (sat/USD icon)", "Moscow Time (noicon)", "Fiat Price ($)", "Fiat Price (€)"),
+    ("Transaction Fees",)
 )
 
 modes = [all_modes[0][0], all_modes[1][0], all_modes[2][0]]
