@@ -96,11 +96,11 @@ try:
         print(f"Connected to wifi, IP address {ip_address}")
         application_mode()
 
-except Exception:
+except Exception as err:
+    print('Exception in main: {} "{}"'.format(type(err), err))
     # Either no wifi configuration file found, or something went wrong, 
     # so go into setup mode.
     setup_mode()
-    
  
 # Start the web server...
 server.run()

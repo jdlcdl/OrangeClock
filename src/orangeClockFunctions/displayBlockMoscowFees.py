@@ -2,6 +2,18 @@ from color_setup import ssd
 from gui.core.writer import Writer
 from gui.core.nanogui import refresh
 from gui.widgets.label import Label
+from orangeClockFunctions.datastore import (
+     getDataSingleton,
+     getPrice,
+     getMoscowTime,
+     getPriceDisplay,
+     getLastBlock,
+     getMempoolFees,
+     getMempoolFeesString,
+     getNostrZapCount,
+     getNextHalving,
+     setNostrPubKey,
+)
 
 import network
 import time
@@ -19,6 +31,7 @@ wri_iconsSmall = Writer(ssd, iconsSmall, verbose=False)
 wri_large = Writer(ssd, large, verbose=False)
 wri_small = Writer(ssd, small, verbose=False)
 
+refresh_interval = 600
 rowMaxDisplay = 296
 labelRow1 = 5
 labelRow2 = 42
@@ -57,67 +70,6 @@ def setSecrets(SSID, PASSWORD):
     secretsPASSWORD = PASSWORD
 
 
-def getPrice(currency): # change USD to EUR for price in euro
-    gc.collect()
-    data = urequests.get("https://mempool.space/api/v1/prices")
-    price = data.json()[currency]
-    data.close()
-    return price
-
-
-def getMoscowTime():
-    moscowTime = str(int(100000000 / float(getPrice("USD"))))
-    return moscowTime
-
-
-def getPriceDisplay(currency):
-    price_str = f"{getPrice(currency):,}"
-    if currency == "EUR":
-        price_str = price_str.replace(",", ".")
-    return price_str
-
-
-def getLastBlock():
-    gc.collect()
-    data = urequests.get("https://mempool.space/api/blocks/tip/height")
-    block = data.text
-    data.close()
-    return block
-
-
-def getMempoolFees():
-    gc.collect()
-    data = urequests.get("https://mempool.space/api/v1/fees/recommended")
-    jsonData = data.json()
-    data.close()
-    return jsonData
-
-
-def getMempoolFeesString():
-    mempoolFees = getMempoolFees()
-    mempoolFeesString = (
-        "L:"
-        + str(mempoolFees["hourFee"])
-        + " M:"
-        + str(mempoolFees["halfHourFee"])
-        + " H:"
-        + str(mempoolFees["fastestFee"])
-    )
-    return mempoolFeesString
-
-
-def getNostrZapCount(nPub):
-    gc.collect()
-    data = urequests.get("https://api.nostr.band/v0/stats/profile/"+nPub)
-    jsonData = str(data.json()["stats"][str(data.json())[12:76]]["zaps_received"]["count"])
-    data.close()
-    return jsonData
-
-
-def getNextHalving():
-    return str(210000 * (math.trunc(int(getLastBlock()) / 210000) + 1) - int(getLastBlock()))
-
-
 def displayInit():
     refresh(ssd, True)
     ssd.wait_until_ready()
@@ -149,6 +101,11 @@ def main():
     mempoolFees = ""
     i = 1
     connectWIFI()
+
+    data = getDataSingleton()
+    if npub:
+        setNostrPubKey(nPub)
+
     displayInit()
     while True:
         debugConsoleOutput("2")
@@ -306,7 +263,16 @@ def main():
         ssd.wait_until_ready()
         ssd.sleep()
         if not issue:
-            time.sleep(600)  # 600 normal
+            time.sleep(refresh_interval)  # 600 normal
+
+            # refresh external data
+            for key, datum in data.items():
+                result = datum.refresh()
+                if result == False:
+                    print("data[{}].refresh() returned False".format(key))
+                elif result == True:
+                    new_data = True
+                    print("{} data changed".format(key))
 
         else:
             wifi.disconnect()
