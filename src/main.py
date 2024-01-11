@@ -65,14 +65,20 @@ def application_mode():
         return render_template(f"{APP_TEMPLATE_PATH}/index.html")
 
     def app_toggle_led(request):
-        print("toogle")
+        from drivers.pico_hardware import toggle_led
+        toggle_led()
         return "OK"
+
+    def app_reset(request):
+        _thread.start_new_thread(machine_reset, ())
+        return render_template(f"{APP_TEMPLATE_PATH}/reset.html")
 
     def app_catch_all(request):
         return "Not found.", 404
 
     server.add_route("/", handler = app_index, methods = ["GET"])
     server.add_route("/toggle", handler = app_toggle_led, methods = ["GET"])
+    server.add_route("/reset", handler = app_reset, methods = ["GET"])
     # Add other routes for your application...
     server.set_callback(app_catch_all)
 
@@ -96,7 +102,8 @@ try:
         print(f"Connected to wifi, IP address {ip_address}")
         application_mode()
 
-except Exception:
+except Exception as err:
+    print("Exception in main(): {}".format(err))
     # Either no wifi configuration file found, or something went wrong, 
     # so go into setup mode.
     setup_mode()

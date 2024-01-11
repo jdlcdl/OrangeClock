@@ -1,36 +1,40 @@
 from color_setup import ssd
-from gui.core.writer import Writer
 from gui.core.nanogui import refresh
-from gui.widgets.label import Label
+from drivers.pico_hardware import turn_led_on, turn_led_off, poll_bootsel_till_released
+from orangeClockFunctions.datastore import ExternalData
+from orangeClockFunctions.compositors import composeClock
+from orangeClockFunctions.datastore import (
+     data, 
+     getPrice,
+     getMoscowTime,
+     getPriceDisplay,
+     getLastBlock,
+     getMempoolFees,
+     getMempoolFeesString,
+     getNostrZapCount,
+     getNextHalving,
+     setNostrPubKey,
+)
 
 import network
 import time
 import urequests
 import json
-import gui.fonts.orangeClockIcons25 as iconsSmall
-import gui.fonts.orangeClockIcons35 as iconsLarge
-import gui.fonts.libreFranklinBold56 as large
-import gui.fonts.libreFranklinSemiBold29 as small
 import gc
 import math
 
-wri_iconsLarge = Writer(ssd, iconsLarge, verbose=False)
-wri_iconsSmall = Writer(ssd, iconsSmall, verbose=False)
-wri_large = Writer(ssd, large, verbose=False)
-wri_small = Writer(ssd, small, verbose=False)
-
-rowMaxDisplay = 296
-labelRow1 = 5
-labelRow2 = 42
-labelRow3 = 98
+refresh_interval = 600
 symbolRow1 = "A"
 symbolRow2 = "H"
 symbolRow3 = "C"
 secretsSSID = ""
 secretsPASSWORD = ""
-dispVersion1 = "bh"  #bh = block height
-dispVersion2 = "mts" #mts = moscow time satsymbol / #mts2 = moscow time satusd icon / mt = without satsymbol / fp1 = fiat price [$] / fp2 = fiat price [€]
 npub = ""
+all_dispVersions = (
+    ("bh", "hal"),				# top: dispVersion1
+    ("mts", "mts2", "mt", "fp1", "fp2"),        # middle: dispVersion2
+)
+data = {}
 
 def connectWIFI():
     global wifi
@@ -42,12 +46,11 @@ def connectWIFI():
 
 
 def setSelectDisplay(displayVersion1, nPub, displayVersion2):
-    global dispVersion1
-    global dispVersion2
     global npub
-    dispVersion1 = displayVersion1
     npub = nPub
-    dispVersion2 = displayVersion2
+
+    global dispVersion
+    dispVersion = [displayVersion1, displayVersion2]
 
 
 def setSecrets(SSID, PASSWORD):
@@ -57,65 +60,26 @@ def setSecrets(SSID, PASSWORD):
     secretsPASSWORD = PASSWORD
 
 
-def getPrice(currency): # change USD to EUR for price in euro
-    gc.collect()
-    data = urequests.get("https://mempool.space/api/v1/prices")
-    price = data.json()[currency]
-    data.close()
-    return price
+def nextDispVersion(_next=True):
+    def is_last_value(a_value, a_list):
+        if _next:
+            return a_list.index(a_value) == len(a_list)-1
+        else:
+            return a_list.index(a_value) == 0
 
+    def next_value(a_value, a_list):
+        if _next:
+            return a_list[(a_list.index(a_value) + 1) % len(a_list)]
+        else:
+            return a_list[(a_list.index(a_value) - 1) % len(a_list)]
 
-def getMoscowTime():
-    moscowTime = str(int(100000000 / float(getPrice("USD"))))
-    return moscowTime
-
-
-def getPriceDisplay(currency):
-    price_str = f"{getPrice(currency):,}"
-    if currency == "EUR":
-        price_str = price_str.replace(",", ".")
-    return price_str
-
-
-def getLastBlock():
-    gc.collect()
-    data = urequests.get("https://mempool.space/api/blocks/tip/height")
-    block = data.text
-    data.close()
-    return block
-
-
-def getMempoolFees():
-    gc.collect()
-    data = urequests.get("https://mempool.space/api/v1/fees/recommended")
-    jsonData = data.json()
-    data.close()
-    return jsonData
-
-
-def getMempoolFeesString():
-    mempoolFees = getMempoolFees()
-    mempoolFeesString = (
-        "L:"
-        + str(mempoolFees["hourFee"])
-        + " M:"
-        + str(mempoolFees["halfHourFee"])
-        + " H:"
-        + str(mempoolFees["fastestFee"])
-    )
-    return mempoolFeesString
-
-
-def getNostrZapCount(nPub):
-    gc.collect()
-    data = urequests.get("https://api.nostr.band/v0/stats/profile/"+nPub)
-    jsonData = str(data.json()["stats"][str(data.json())[12:76]]["zaps_received"]["count"])
-    data.close()
-    return jsonData
-
-
-def getNextHalving():
-    return str(210000 * (math.trunc(int(getLastBlock()) / 210000) + 1) - int(getLastBlock()))
+    for i, dispVer in reversed([xy for xy in enumerate(dispVersion)]):
+        was_last = is_last_value(dispVer, all_dispVersions[i])
+        dispVersion[i] = next_value(dispVer, all_dispVersions[i])
+        if was_last:
+            continue
+        else:
+            break
 
 
 def displayInit():
@@ -131,10 +95,13 @@ def displayInit():
 
 
 def debugConsoleOutput(id):
-    print("===============debug id= " + id + "===============")
-    print("memory use: ", gc.mem_alloc() / 1024, "KiB")
+    mem_alloc = gc.mem_alloc()
+    print("=============== debug id=" + id + " ===============")
+    print("memory used: ", mem_alloc / 1024, "KiB")
     print("memory free: ", gc.mem_free() / 1024, "KiB")
-    print("===============end debug===============")
+    gc.collect()
+    print("gc.collect() freed additional:", (mem_alloc - gc.mem_alloc()) / 1024, "KiB")
+    print("=============== end debug ===============")
 
 
 def main():
@@ -142,6 +109,7 @@ def main():
     global wifi
     global secretsSSID
     global secretsPASSWORD
+    global data
     debugConsoleOutput("1")
     issue = False
     blockHeight = ""
@@ -149,6 +117,10 @@ def main():
     mempoolFees = ""
     i = 1
     connectWIFI()
+
+    if npub:
+        setNostrPubKey(nPub)
+
     displayInit()
     while True:
         debugConsoleOutput("2")
@@ -168,10 +140,10 @@ def main():
             refresh(ssd, True)
             time.sleep(5)
         try:
-            if dispVersion1 == "zap":
+            if dispVersion[0] == "zap":
                 symbolRow1 = "F"
                 blockHeight = getNostrZapCount(npub)
-            elif dispVersion1 == "hal":
+            elif dispVersion[0] == "hal":
                 symbolRow1 = "E"
                 blockHeight = getNextHalving()
             else:
@@ -184,16 +156,16 @@ def main():
             debugConsoleOutput("3")
             issue = True
         try:
-            if dispVersion2 == "mt":
+            if dispVersion[1] == "mt":
                 symbolRow2 = ""
                 textRow2 = getMoscowTime()
-            elif dispVersion2 == "mts2":
+            elif dispVersion[1] == "mts2":
                 symbolRow2 = "I"
                 textRow2 = getMoscowTime()
-            elif dispVersion2 == "fp1":
+            elif dispVersion[1] == "fp1":
                 symbolRow2 = "K"
                 textRow2 = getPriceDisplay("USD")
-            elif dispVersion2 == "fp2":
+            elif dispVersion[1] == "fp2":
                 symbolRow2 = "B"
                 textRow2 = getPriceDisplay("EUR")
             else:
@@ -215,105 +187,49 @@ def main():
             debugConsoleOutput("5")
             issue = True
 
-        labels = [
-            Label(
-                wri_small,
-                labelRow1,
-                int(
-                    (
-                        rowMaxDisplay
-                        - Writer.stringlen(wri_small, blockHeight)
-                        + Writer.stringlen(wri_iconsSmall, symbolRow1)
-                        + 4  # spacing
-                    )
-                    / 2
-                ),
-                blockHeight,
-            ),
-            Label(
-                wri_iconsSmall,
-                labelRow1 + 2,  # center icon with text
-                int(
-                    (
-                        rowMaxDisplay
-                        - Writer.stringlen(wri_iconsSmall, symbolRow1)
-                        - Writer.stringlen(wri_small, blockHeight)
-                        - 4  # spacing
-                    )
-                    / 2
-                ),
-                symbolRow1,
-            ),
-            Label(
-                wri_large,
-                labelRow2,
-                int(
-                    (
-                        rowMaxDisplay
-                        - Writer.stringlen(wri_large, textRow2)
-                        + Writer.stringlen(wri_iconsLarge, symbolRow2)
-                        + 2  # spacing
-                    )
-                    / 2
-                ),
-                textRow2,
-            ),
-            Label(
-                wri_iconsLarge,
-                labelRow2,  # + 10 for centered satsymbol
-                int(
-                    (
-                        rowMaxDisplay
-                        - Writer.stringlen(wri_iconsLarge, symbolRow2)
-                        - Writer.stringlen(wri_large, textRow2)
-                        - 2  # spacing
-                    )
-                    / 2
-                ),
-                symbolRow2,
-            ),
-            Label(
-                wri_small,
-                labelRow3,
-                int(
-                    (
-                        rowMaxDisplay
-                        - Writer.stringlen(wri_small, mempoolFees)
-                        + Writer.stringlen(wri_iconsSmall, symbolRow3)
-                        + 4  # spacing
-                    )
-                    / 2
-                ),
-                mempoolFees,
-            ),
-            Label(
-                wri_iconsSmall,
-                labelRow3 + 1,  # center icon with text
-                int(
-                    (
-                        rowMaxDisplay
-                        - Writer.stringlen(wri_iconsSmall, symbolRow3)
-                        - Writer.stringlen(wri_small, mempoolFees)
-                        - 4  # spacing
-                    )
-                    / 2
-                ),
-                symbolRow3,
-            )
-        ]
+        labels = composeClock(
+            ssd,
+            (blockHeight, symbolRow1),
+            (textRow2, symbolRow2),
+            (mempoolFees, symbolRow3)
+        )
 
         refresh(ssd, False)
         ssd.wait_until_ready()
         ssd.sleep()
+        last_refreshed = time.time()
         if not issue:
-            time.sleep(600)  # 600 normal
+            while time.time() < last_refreshed + refresh_interval:
+                pressed_us = poll_bootsel_till_released(
+                    timeout_s=min(60, time.time() - last_refreshed + refresh_interval),
+                    press_callback=turn_led_on,
+                    release_callback=turn_led_off
+                )
+                if pressed_us:
+                    if pressed_us / 10**6 < 1:		# short press: next mode
+                        nextDispVersion()
+                        break
+                    elif pressed_us / 10**6 < 2:	# long press: previous mode
+                        nextDispVersion(False)
+                        break
+                    else:
+                        return				# very long press: leave clock mode
 
+                new_data = False
+                for key, datum in data.items():
+                    result = datum.refresh()
+                    if result == False:
+                        print("data[{}].refresh() returned False".format(key))
+                    elif result == True:
+                        new_data = True
+                        print("{} data changed".format(key))
+                if new_data:
+                    break
         else:
             wifi.disconnect()
             debugConsoleOutput("6")
             wifi.connect(secretsSSID, secretsPASSWORD)
             time.sleep(60)
-            gc.collect()
 
         # Have the Labels write blanks into the framebuf to erase what they
         # rendered in the previous cycle.
