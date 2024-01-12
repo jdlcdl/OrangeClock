@@ -2,56 +2,6 @@ import time
 import requests
 
 
-def getPrice(currency): # change USD to EUR for price in euro
-    return data["prices"].data[currency]
-
-
-def getMoscowTime():
-    moscowTime = str(int(100000000 / float(getPrice("USD"))))
-    return moscowTime
-
-
-def getPriceDisplay(currency):
-    price_str = f"{getPrice(currency):,}"
-    if currency == "EUR":
-        price_str = price_str.replace(",", ".")
-    return price_str
-
-
-def getLastBlock():
-    return data["height"].data
-
-
-def getMempoolFees():
-    return data["fees"].data
-
-
-def getMempoolFeesString():
-    mempoolFees = getMempoolFees()
-    mempoolFeesString = (
-        "L:"
-        + str(mempoolFees["hourFee"])
-        + " M:"
-        + str(mempoolFees["halfHourFee"])
-        + " H:"
-        + str(mempoolFees["fastestFee"])
-    )
-    return mempoolFeesString
-
-
-def getNostrZapCount(nPub):
-    jsonData = str(data["zaps"].data["stats"][str(data.json())[12:76]]["zaps_received"]["count"])
-    return jsonData
-
-
-def getNextHalving():
-    return 210000 - getLastBlock() % 210000
-
-
-def setNostrPubKey(nPub):
-    data['zaps'] = ExternalData("https://api.nostr.band/v0/stats/profile/"+nPub, 300)
-
-
 class ExternalData:
     def __init__(self, url, ttl=300, json=True):
         self.url = url
@@ -98,9 +48,56 @@ class ExternalData:
         return answer
 
 
-# a singleton to be imported by others.  (use setNostrPubKey() for "zaps" data setup)
-data = {
-    "prices": ExternalData("https://mempool.space/api/v1/prices", 300),
-    "fees": ExternalData("https://mempool.space/api/v1/fees/recommended", 120),
-    "height": ExternalData("https://mempool.space/api/blocks/tip/height", 180, json=False),
-}
+def getMoscowTime():
+    return int(100000000 / float(getPrice("USD")))
+
+def getPriceDisplay(currency):
+    price_str = f"{getPrice(currency):,}"
+    if currency == "EUR":
+        price_str = price_str.replace(",", ".")
+    return price_str
+
+def getMempoolFeesString():
+    mempoolFees = getMempoolFees()
+    mempoolFeesString = (
+        "L:"
+        + str(mempoolFees["hourFee"])
+        + " M:"
+        + str(mempoolFees["halfHourFee"])
+        + " H:"
+        + str(mempoolFees["fastestFee"])
+    )
+    return mempoolFeesString
+
+def getNextHalving():
+    return 210000 - getLastBlock() % 210000
+
+
+# _data is a singleton dict holding raw data from sources -- used internally,
+# else use getDataSingleton()
+_data = None
+
+def getLastBlock():
+    return int(_data["height"].data)
+
+def getPrice(currency): # change USD to EUR for price in euro
+    return _data["prices"].data[currency]
+
+def getMempoolFees():
+    return _data["fees"].data
+
+def getNostrZapCount(nPub):
+    return _data["zaps"].data["stats"][str(_data.json())[12:76]]["zaps_received"]["count"]
+
+def setNostrPubKey(nPub):
+    _data['zaps'] = ExternalData("https://api.nostr.band/v0/stats/profile/"+nPub, 300)
+
+def getDataSingleton():
+    global _data
+    if _data == None:
+        _data = {
+            "prices": ExternalData("https://mempool.space/api/v1/prices", 300),
+            "fees": ExternalData("https://mempool.space/api/v1/fees/recommended", 120),
+            "height": ExternalData("https://mempool.space/api/blocks/tip/height", 180, json=False),
+        }
+    return _data

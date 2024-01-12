@@ -15,8 +15,8 @@ APP_TEMPLATE_PATH = "app_templates"
 WIFI_FILE = "wifi.json"
 
 def machine_reset():
-    utime.sleep(1)
     print("Resetting...")
+    utime.sleep(5)
     machine.reset()
 
 def setup_mode():
@@ -73,12 +73,18 @@ def application_mode():
         _thread.start_new_thread(machine_reset, ())
         return render_template(f"{APP_TEMPLATE_PATH}/reset.html")
 
+    def app_reconfig(request):
+        os.remove(WIFI_FILE)
+        _thread.start_new_thread(machine_reset, ())
+        return render_template(f"{APP_TEMPLATE_PATH}/reconfig.html")
+
     def app_catch_all(request):
         return "Not found.", 404
 
     server.add_route("/", handler = app_index, methods = ["GET"])
     server.add_route("/toggle", handler = app_toggle_led, methods = ["GET"])
     server.add_route("/reset", handler = app_reset, methods = ["GET"])
+    server.add_route("/reconfig", handler = app_reconfig, methods = ["GET"])
     # Add other routes for your application...
     server.set_callback(app_catch_all)
 
@@ -103,11 +109,10 @@ try:
         application_mode()
 
 except Exception as err:
-    print("Exception in main(): {}".format(err))
+    print('Exception in main: {} "{}"'.format(type(err), err))
     # Either no wifi configuration file found, or something went wrong, 
     # so go into setup mode.
     setup_mode()
-    
  
 # Start the web server...
 server.run()

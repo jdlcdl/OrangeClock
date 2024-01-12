@@ -10,6 +10,7 @@
         <br/>
         <button id="toggleBtn">Toggle LED</button>
         <script src="data:text/javascript,document.getElementById('toggleBtn').onclick = async function() { await fetch('/toggle'); };" defer></script>
-        <form action="/reset" method="GET"><button>Reset</button></form>
+        <form action="/reset" method="GET"><button>Reset board</button></form>
+        <form action="/reconfig" method="GET"><button>ReConfig OrangeClock</button></form>
     </body>
 </html>

@@ -2,9 +2,9 @@ from color_setup import ssd
 from gui.core.nanogui import refresh
 from drivers.pico_hardware import turn_led_on, turn_led_off, poll_bootsel_till_released
 from orangeClockFunctions.datastore import ExternalData
-from orangeClockFunctions.compositors import composeClock
+from orangeClockFunctions.compositors import composeClock, composeSetup
 from orangeClockFunctions.datastore import (
-     data, 
+     getDataSingleton,
      getPrice,
      getMoscowTime,
      getPriceDisplay,
@@ -34,7 +34,6 @@ all_dispVersions = (
     ("bh", "hal"),				# top: dispVersion1
     ("mts", "mts2", "mt", "fp1", "fp2"),        # middle: dispVersion2
 )
-data = {}
 
 def connectWIFI():
     global wifi
@@ -118,6 +117,7 @@ def main():
     i = 1
     connectWIFI()
 
+    data = getDataSingleton()
     if npub:
         setNostrPubKey(nPub)
 
@@ -142,13 +142,13 @@ def main():
         try:
             if dispVersion[0] == "zap":
                 symbolRow1 = "F"
-                blockHeight = getNostrZapCount(npub)
+                blockHeight = str(getNostrZapCount(npub))
             elif dispVersion[0] == "hal":
                 symbolRow1 = "E"
-                blockHeight = getNextHalving()
+                blockHeight = str(getNextHalving())
             else:
                 symbolRow1 = "A"
-                blockHeight = getLastBlock()    
+                blockHeight = str(getLastBlock())
         except Exception as err:
             blockHeight = "connection error"
             symbolRow1 = ""
@@ -158,10 +158,10 @@ def main():
         try:
             if dispVersion[1] == "mt":
                 symbolRow2 = ""
-                textRow2 = getMoscowTime()
+                textRow2 = str(getMoscowTime())
             elif dispVersion[1] == "mts2":
                 symbolRow2 = "I"
-                textRow2 = getMoscowTime()
+                textRow2 = str(getMoscowTime())
             elif dispVersion[1] == "fp1":
                 symbolRow2 = "K"
                 textRow2 = getPriceDisplay("USD")
@@ -170,7 +170,7 @@ def main():
                 textRow2 = getPriceDisplay("EUR")
             else:
                 symbolRow2 = "H"
-                textRow2 = getMoscowTime()        
+                textRow2 = str(getMoscowTime())
         except Exception as err:
             textRow2 = "error"
             symbolRow2 = ""
@@ -212,8 +212,25 @@ def main():
                     elif pressed_us / 10**6 < 2:	# long press: previous mode
                         nextDispVersion(False)
                         break
-                    else:
-                        return				# very long press: leave clock mode
+                    else:                               # very long press: leave clock mode
+                        ssid_str = secretsSSID
+                        ipaddr_str = "http://" + wifi.ifconfig()[0]
+                        if len(ssid_str) > 17:
+                            ssid_str = ssid_str[:14] + "..."
+                        if len(ipaddr_str) > 19:
+                            ipaddr_str = "..." + ipaddr_str[-15:]
+                        for label in labels:
+                            label.value("")
+                        labels = composeSetup(
+                            ssd,
+                            ("app server:", "J"),
+                            (ssid_str, "L"),
+                            (ipaddr_str, "D")
+                        )  
+                        refresh(ssd, False)
+                        ssd.wait_until_ready()
+                        ssd.sleep()
+                        return				
 
                 new_data = False
                 for key, datum in data.items():

@@ -18,7 +18,7 @@ def main():
         ssd,
         (setupTxt, "J"),
         (wifiTxt, "L"),
-        (URITxt, "D"),
+        (URITxt, "D")
     )
 
     ssd.wait_until_ready()
