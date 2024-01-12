@@ -127,13 +127,13 @@ def main():
         try:
             if dispVersion1 == "zap":
                 symbolRow1 = "F"
-                blockHeight = getNostrZapCount(npub)
+                blockHeight = str(getNostrZapCount(npub))
             elif dispVersion1 == "hal":
                 symbolRow1 = "E"
-                blockHeight = getNextHalving()
+                blockHeight = str(getNextHalving())
             else:
                 symbolRow1 = "A"
-                blockHeight = getLastBlock()    
+                blockHeight = str(getLastBlock())
         except Exception as err:
             blockHeight = "connection error"
             symbolRow1 = ""
@@ -143,10 +143,10 @@ def main():
         try:
             if dispVersion2 == "mt":
                 symbolRow2 = ""
-                textRow2 = getMoscowTime()
+                textRow2 = str(getMoscowTime())
             elif dispVersion2 == "mts2":
                 symbolRow2 = "I"
-                textRow2 = getMoscowTime()
+                textRow2 = str(getMoscowTime())
             elif dispVersion2 == "fp1":
                 symbolRow2 = "K"
                 textRow2 = getPriceDisplay("USD")
@@ -155,7 +155,7 @@ def main():
                 textRow2 = getPriceDisplay("EUR")
             else:
                 symbolRow2 = "H"
-                textRow2 = getMoscowTime()        
+                textRow2 = str(getMoscowTime())
         except Exception as err:
             textRow2 = "error"
             symbolRow2 = ""

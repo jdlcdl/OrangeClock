@@ -49,9 +49,7 @@ class ExternalData:
 
 
 def getMoscowTime():
-    moscowTime = str(int(100000000 / float(getPrice("USD"))))
-    return moscowTime
-
+    return = int(100000000 / float(getPrice("USD")))
 
 def getPriceDisplay(currency):
     price_str = f"{getPrice(currency):,}"
@@ -80,7 +78,7 @@ def getNextHalving():
 _data = None
 
 def getLastBlock():
-    return _data["height"].data
+    return int(_data["height"].data)
 
 def getPrice(currency): # change USD to EUR for price in euro
     return _data["prices"].data[currency]
@@ -89,8 +87,7 @@ def getMempoolFees():
     return _data["fees"].data
 
 def getNostrZapCount(nPub):
-    jsonData = str(_data["zaps"].data["stats"][str(_data.json())[12:76]]["zaps_received"]["count"])
-    return jsonData
+    return _data["zaps"].data["stats"][str(_data.json())[12:76]]["zaps_received"]["count"]
 
 def setNostrPubKey(nPub):
     _data['zaps'] = ExternalData("https://api.nostr.band/v0/stats/profile/"+nPub, 300)
