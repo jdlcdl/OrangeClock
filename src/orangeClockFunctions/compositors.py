@@ -3,7 +3,7 @@ from gui.widgets.label import Label
 
 import gui.fonts.orangeClockIcons25 as iconsSmall
 import gui.fonts.orangeClockIcons35 as iconsLarge
-import gui.fonts.libreFranklinBold56 as large
+import gui.fonts.libreFranklinBold50 as large
 import gui.fonts.libreFranklinSemiBold29 as small
 
 
@@ -45,11 +45,11 @@ def composeClock(ssd, first, second, third):
     text_writers = (wri_small, wri_large, wri_small)
 
     # text and icon vertical position y-offsets for row1, row2, and row3
-    text_y_offsets = (5, 42, 98) 
-    icon_y_offsets = (7, 47, 99) 
+    text_y_offsets = (5, 44, 98) 
+    icon_y_offsets = (7, 49, 99) 
 
     # spacing between text and icon for row1, row2, and row3
-    spacings = (4, 2, 4)
+    spacings = (4, 0, 4)
 
     labels = []
     for i, (text, icon) in enumerate([first, second, third]):
@@ -94,8 +94,8 @@ def composeSetup(ssd, first, second, third):
     text_writer = wri_small
 
     # text and icon vertical position y-offsets for row1, row2, and row3
-    text_y_offsets = (5, 46, 85) 
-    icon_y_offsets = (7, 46, 86) 
+    text_y_offsets = (5, 49, 85) 
+    icon_y_offsets = (7, 49, 86) 
 
     x_offset = 10 
     spacing = 4
