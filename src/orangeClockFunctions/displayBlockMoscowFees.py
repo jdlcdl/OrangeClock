@@ -1,19 +1,25 @@
 from color_setup import ssd
 from gui.core.nanogui import refresh
-from drivers.pico_hardware import turn_led_on, turn_led_off, poll_bootsel_till_released
+from drivers.pico_hardware import (
+    poll_bootsel,
+    ack_short_press,
+    ack_double_press,
+    ack_long_press,
+    nack_press,
+)
 from orangeClockFunctions.datastore import ExternalData
 from orangeClockFunctions.compositors import composeClock, composeSetup
 from orangeClockFunctions.datastore import (
-     getDataSingleton,
-     getPrice,
-     getMoscowTime,
-     getPriceDisplay,
-     getLastBlock,
-     getMempoolFees,
-     getMempoolFeesString,
-     getNostrZapCount,
-     getNextHalving,
-     setNostrPubKey,
+    getDataSingleton,
+    getPrice,
+    getMoscowTime,
+    getPriceDisplay,
+    getLastBlock,
+    getMempoolFees,
+    getMempoolFeesString,
+    getNostrZapCount,
+    getNextHalving,
+    setNostrPubKey,
 )
 
 import network
@@ -200,37 +206,42 @@ def main():
         last_refreshed = time.time()
         if not issue:
             while time.time() < last_refreshed + refresh_interval:
-                pressed_us = poll_bootsel_till_released(
-                    timeout_s=min(60, time.time() - last_refreshed + refresh_interval),
-                    press_callback=turn_led_on,
-                    release_callback=turn_led_off
-                )
-                if pressed_us:
-                    if pressed_us / 10**6 < 1:		# short press: next mode
-                        nextDispVersion()
-                        break
-                    elif pressed_us / 10**6 < 2:	# long press: previous mode
-                        nextDispVersion(False)
-                        break
-                    else:                               # very long press: leave clock mode
-                        ssid_str = secretsSSID
-                        ipaddr_str = "http://" + wifi.ifconfig()[0]
-                        if len(ssid_str) > 17:
-                            ssid_str = ssid_str[:14] + "..."
-                        if len(ipaddr_str) > 19:
-                            ipaddr_str = "..." + ipaddr_str[-15:]
-                        for label in labels:
-                            label.value("")
-                        labels = composeSetup(
-                            ssd,
-                            ("app server:", "J"),
-                            (ssid_str, "L"),
-                            (ipaddr_str, "D")
-                        )  
-                        refresh(ssd, False)
-                        ssd.wait_until_ready()
-                        ssd.sleep()
-                        return				
+                pressed = poll_bootsel(timeout_s=min(
+                        60, time.time() - last_refreshed + refresh_interval
+                ))
+                if not pressed:
+                    continue
+                elif pressed == "short":
+                    ack_short_press()
+                    nextDispVersion()
+                    break
+                elif pressed == "double":
+                    ack_double_press()
+                    nextDispVersion(False)
+                    break
+                elif pressed == "long":
+                    ack_long_press()
+                    ssid_str = secretsSSID
+                    ipaddr_str = "http://" + wifi.ifconfig()[0]
+                    if len(ssid_str) > 17:
+                        ssid_str = ssid_str[:14] + "..."
+                    if len(ipaddr_str) > 19:
+                        ipaddr_str = "..." + ipaddr_str[-15:]
+                    for label in labels:
+                        label.value("")
+                    labels = composeSetup(
+                        ssd,
+                        ("app server:", "J"),
+                        (ssid_str, "L"),
+                        (ipaddr_str, "D")
+                    )  
+                    refresh(ssd, False)
+                    ssd.wait_until_ready()
+                    ssd.sleep()
+                    return				
+                else:
+                    nack_press()
+                    continue
 
                 new_data = False
                 for key, datum in data.items():
