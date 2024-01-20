@@ -210,7 +210,7 @@ def main():
                         60, time.time() - last_refreshed + refresh_interval
                 ))
                 if not pressed:
-                    continue
+                    pass
                 elif pressed == "short":
                     ack_short_press()
                     nextDispVersion()
