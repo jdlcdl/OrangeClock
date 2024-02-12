@@ -103,7 +103,7 @@ except Exception as err:
     # so log exception, then go into setup mode.
     tmp = uio.StringIO()
     usys.print_exception(err, tmp)
-    logging.exception(f"> {tmp.getvalue().replace('\n','\\n')}")
+    logging.exception("> {}".format(tmp.getvalue().replace("\n","\\n")))
     setup_mode()
     
  
