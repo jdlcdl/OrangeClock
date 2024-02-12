@@ -141,9 +141,12 @@ class Piezo:
 #
 
 # _buzzer = None
-_buzzer = Piezo(15, 1024)
+_buzzers = [
+    Piezo(14, 1024), 
+    Piezo(15, 1024)
+]
 
-def alert(count=10, interval_ms=100, audible=_buzzer, hilo=False):
+def alert(count=10, interval_ms=100, audible=bool(_buzzers), hilo=False):
     '''
     blinks the led count times for interval_ms;
     ... may play alternating lo/hi tones to piezo
@@ -157,14 +160,16 @@ def alert(count=10, interval_ms=100, audible=_buzzer, hilo=False):
     try:
         for i in range(count):
             toggle_led()
-            if audible and _buzzer:
-                _buzzer.tone(LOW_TONE if i%2==0 else HIGH_TONE, interval_ms)
+            if audible and _buzzers:
+                _buzzers[0].tone(LOW_TONE if i%2==0 else HIGH_TONE, interval_ms)
+                _buzzers[1].tone(LOW_TONE if i%2==0 else HIGH_TONE, interval_ms)
             else:
                 time.sleep_ms(interval_ms)
     finally:
         turn_led_off()
-        if audible and _buzzer:
-            _buzzer.die()
+        if audible and _buzzers:
+            _buzzers[0].die()
+            _buzzers[1].die()
 
 
 ack_short_press = lambda: alert(2, 100)
