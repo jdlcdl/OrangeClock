@@ -57,6 +57,16 @@ def getPriceDisplay(currency):
         price_str = price_str.replace(",", ".")
     return price_str
 
+def getHashrateDisplay():
+    # need more fonts for below "E","H","/","s"
+    #return "{:0.1f} EH/s".format(getCurrentHashrate() / 10**18)
+    return "{:0.1f}e18".format(getCurrentHashrate() / 10**18)
+
+def getDifficultyDisplay():
+    # need more fonts for below "T"
+    #return "{:0.2f}T".format(getCurrentDifficulty() / 10**12)
+    return "{:0.2f}e12".format(getCurrentDifficulty() / 10**12)
+
 def getMempoolFeesString():
     mempoolFees = getMempoolFees()
     mempoolFeesString = (
@@ -89,11 +99,18 @@ def getPrice(currency): # change USD to EUR for price in euro
 def getMempoolFees():
     return _data["fees"].data
 
+def getCurrentHashrate():
+    return _data['mining'].data["currentHashrate"]
+
+def getCurrentDifficulty():
+    return _data['mining'].data["currentDifficulty"]
+
 def getNostrZapCount(nPub):
     return _data["zaps"].data["stats"][str(_data.json())[12:76]]["zaps_received"]["count"]
 
 def setNostrPubKey(nPub):
     _data['zaps'] = ExternalData("https://api.nostr.band/v0/stats/profile/"+nPub, 300)
+
 
 def getDataSingleton():
     global _data
@@ -102,5 +119,6 @@ def getDataSingleton():
             "prices": ExternalData("https://mempool.space/api/v1/prices", 300),
             "fees": ExternalData("https://mempool.space/api/v1/fees/recommended", 120),
             "height": ExternalData("https://mempool.space/api/blocks/tip/height", 180, json=False),
+            "mining": ExternalData("https://mempool.space/api/v1/mining/hashrate/3d", 180),
         }
     return _data
