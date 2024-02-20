@@ -153,16 +153,18 @@ def alert(count=10, interval_ms=100, audible=bool(_buzzers), hilo=False):
     '''
     LOW_TONE = 400
     HIGH_TONE = 800
+    buzzorder = (0, 1)
     if hilo:
        LOW_TONE, HIGH_TONE = HIGH_TONE, LOW_TONE
+       buzzorder = tuple([x for x in reversed(buzzorder)])
     assert type(count) == int
     assert type(interval_ms) == int
     try:
         for i in range(count):
             toggle_led()
             if audible and _buzzers:
-                _buzzers[0].tone(LOW_TONE if i%2==0 else HIGH_TONE, interval_ms)
-                _buzzers[1].tone(LOW_TONE if i%2==0 else HIGH_TONE, interval_ms)
+                _buzzers[buzzorder[0]].tone(LOW_TONE if i%2==0 else HIGH_TONE, interval_ms)
+                _buzzers[buzzorder[1]].tone(LOW_TONE if i%2==0 else HIGH_TONE, interval_ms)
             else:
                 time.sleep_ms(interval_ms)
     finally:
