@@ -29,7 +29,7 @@ import json
 import gc
 import math
 
-refresh_interval = 600
+refresh_interval = 30
 symbolRow1 = "A"
 symbolRow2 = "H"
 symbolRow3 = "C"
@@ -90,13 +90,13 @@ def nextDispVersion(_next=True):
 def displayInit():
     refresh(ssd, True)
     ssd.wait_until_ready()
-    time.sleep(5)
+    #time.sleep(5)
     ssd._full = False
-    ssd.wait_until_ready()
+    #ssd.wait_until_ready()
     refresh(ssd, True)
     ssd.wait_until_ready()
     ssd.sleep()  # deep sleep
-    time.sleep(5)
+    #time.sleep(5)
 
 
 def debugConsoleOutput(id):
@@ -132,19 +132,19 @@ def main():
         debugConsoleOutput("2")
         if issue:
             issue = False
-        if i > 72:
+        if i > 72*20:
             i = 1
             refresh(ssd, True)  # awake from deep sleep
-            time.sleep(5)
+            #time.sleep(5)
             ssd._full = True
             ssd.wait_until_ready()
             refresh(ssd, True)
             ssd.wait_until_ready()
-            time.sleep(20)
+            #time.sleep(20)
             ssd._full = False
             ssd.wait_until_ready()
             refresh(ssd, True)
-            time.sleep(5)
+            #time.sleep(5)
         try:
             if dispVersion[0] == "zap":
                 symbolRow1 = "F"
@@ -207,7 +207,7 @@ def main():
         if not issue:
             while time.time() < last_refreshed + refresh_interval:
                 pressed = poll_bootsel(timeout_s=min(
-                        60, time.time() - last_refreshed + refresh_interval
+                        30, time.time() - last_refreshed + refresh_interval
                 ))
                 if not pressed:
                     pass
