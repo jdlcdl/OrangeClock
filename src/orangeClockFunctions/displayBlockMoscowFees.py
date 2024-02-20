@@ -19,6 +19,7 @@ from orangeClockFunctions.datastore import (
     getMempoolFeesString,
     getNostrZapCount,
     getNextHalving,
+    getNextDifficultyAdjustment,
     setNostrPubKey,
 )
 
@@ -37,7 +38,7 @@ secretsSSID = ""
 secretsPASSWORD = ""
 npub = ""
 all_dispVersions = (
-    ("bh", "hal"),				# top: dispVersion1
+    ("bh", "hal", "nda"),			# top: dispVersion1
     ("mts", "mts2", "mt", "fp1", "fp2"),        # middle: dispVersion2
 )
 
@@ -149,9 +150,12 @@ def main():
             if dispVersion[0] == "zap":
                 symbolRow1 = "F"
                 blockHeight = str(getNostrZapCount(npub))
-            elif dispVersion[0] == "hal":
+            if dispVersion[0] == "hal":
                 symbolRow1 = "E"
                 blockHeight = str(getNextHalving())
+            elif dispVersion[0] == "nda":
+                symbolRow1 = "G"
+                blockHeight = str(getNextDifficultyAdjustment())
             else:
                 symbolRow1 = "A"
                 blockHeight = str(getLastBlock())

@@ -72,6 +72,9 @@ def getMempoolFeesString():
 def getNextHalving():
     return 210000 - getLastBlock() % 210000
 
+def getNextDifficultyAdjustment():
+    return 2016 - getLastBlock() % 2016
+
 
 # _data is a singleton dict holding raw data from sources -- used internally,
 # else use getDataSingleton()
