@@ -57,9 +57,9 @@ ssd = SSD(spi, pcs, pdc, prst, pbusy, landscape=True, asyn=False, full=True)  # 
 
 # begin #NO_SCREEN_AVAILABLE#
 # If no e-paper-display: sleep it, cleanup, redefine ssd
-ssd.sleep()
-del RST_PIN, DC_PIN, CS_PIN, BUSY_PIN, prst, pbusy, spi, pdc, ssd, SSD
-gc.collect()
-from drivers.console_display import MonoConsoleDisplay as SSD
-ssd = SSD(296, 128, "MONO_HLSB", invert=False)
+#ssd.sleep()
+#del RST_PIN, DC_PIN, CS_PIN, BUSY_PIN, prst, pbusy, spi, pdc, ssd, SSD
+#gc.collect()
+#from drivers.console_display import MonoConsoleDisplay as SSD
+#ssd = SSD(296, 128, "MONO_HLSB", invert=False)
 # end #NO_SCREEN_AVAILABLE#
