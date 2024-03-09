@@ -62,10 +62,14 @@ def getHashrateDisplay():
     #return "{:0.1f} EH/s".format(getCurrentHashrate() / 10**18)
     return "{:0.1f}e18".format(getCurrentHashrate() / 10**18)
 
+
 def getDifficultyDisplay():
     # need more fonts for below "T"
     #return "{:0.2f}T".format(getCurrentDifficulty() / 10**12)
     return "{:0.2f}e12".format(getCurrentDifficulty() / 10**12)
+
+def getUSTotalPublicDebtOutstandingDisplay():
+    return "{:0.2f}e12".format(getUSTotalPublicDebtOutstanding() / 10**12)
 
 def getMempoolFeesString():
     mempoolFees = getMempoolFees()
@@ -105,6 +109,9 @@ def getCurrentHashrate():
 def getCurrentDifficulty():
     return _data['mining'].data["currentDifficulty"]
 
+def getUSTotalPublicDebtOutstanding():
+    return int(float(_data['usdebt'].data["data"][0]["tot_pub_debt_out_amt"]))
+
 def getNostrZapCount(nPub):
     return _data["zaps"].data["stats"][str(_data.json())[12:76]]["zaps_received"]["count"]
 
@@ -120,5 +127,6 @@ def getDataSingleton():
             "fees": ExternalData("https://mempool.space/api/v1/fees/recommended", 120),
             "height": ExternalData("https://mempool.space/api/blocks/tip/height", 180, json=False),
             "mining": ExternalData("https://mempool.space/api/v1/mining/hashrate/3d", 180),
+            "usdebt": ExternalData("https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v2/accounting/od/debt_to_penny?fields=tot_pub_debt_out_amt,record_date&sort=-record_date&page[size]=1", 86400),
         }
     return _data

@@ -22,6 +22,7 @@ from orangeClockFunctions.datastore import (
     getNextDifficultyAdjustment,
     getHashrateDisplay,
     getDifficultyDisplay,
+    getUSTotalPublicDebtOutstandingDisplay,
     setNostrPubKey,
 )
 
@@ -41,7 +42,7 @@ secretsPASSWORD = ""
 npub = ""
 all_dispVersions = (
     ("bh", "hal", "nda"),                               # top: dispVersion1
-    ("mts", "mts2", "mt", "fp1", "fp2", "mch", "mcd"),  # middle: dispVersion2
+    ("mts", "mts2", "mt", "fp1", "fp2", "mch", "mcd", "dbt"),  # middle: dispVersion2
 )
 
 def connectWIFI():
@@ -186,6 +187,9 @@ def main():
             elif dispVersion[1] == "mcd":
                 symbolRow2 = "B"
                 textRow2 = getDifficultyDisplay()
+            elif dispVersion[1] == "dbt":
+                symbolRow2 = "K"
+                textRow2 = getUSTotalPublicDebtOutstandingDisplay()
             else:
                 symbolRow2 = "H"
                 textRow2 = str(getMoscowTime())
