@@ -7,24 +7,8 @@ from drivers.pico_hardware import (
     ack_long_press,
     nack_press,
 )
-from orangeClockFunctions.datastore import ExternalData
 from orangeClockFunctions.compositors import composeClock, composeSetup
-from orangeClockFunctions.datastore import (
-    getDataSingleton,
-    getPrice,
-    getMoscowTime,
-    getPriceDisplay,
-    getLastBlock,
-    getMempoolFees,
-    getMempoolFeesString,
-    getNostrZapCount,
-    getNextHalving,
-    getNextDifficultyAdjustment,
-    getHashrateDisplay,
-    getDifficultyDisplay,
-    getUSTotalPublicDebtOutstandingDisplay,
-    setNostrPubKey,
-)
+from orangeClockFunctions import datastore
 
 import network
 import time
@@ -32,6 +16,7 @@ import urequests
 import json
 import gc
 import math
+
 
 refresh_interval = 30
 symbolRow1 = "A"
@@ -41,10 +26,14 @@ secretsSSID = ""
 secretsPASSWORD = ""
 npub = ""
 all_dispVersions = (
-    ("bh", "hal", "nda"),                               # top: dispVersion1
+    ("bh", "hal", "nda", "zap"),                               # top: dispVersion1
     ("mts", "mts2", "mt", "fp1", "fp2", "mch", "mcd", "dbt"),  # middle: dispVersion2
 )
 
+
+#
+# network setup
+#
 def connectWIFI():
     global wifi
     wifi = network.WLAN(network.STA_IF)
@@ -53,7 +42,16 @@ def connectWIFI():
     time.sleep(1)
     print(wifi.isconnected())
 
+def setSecrets(SSID, PASSWORD):
+    global secretsSSID
+    global secretsPASSWORD
+    secretsSSID = SSID
+    secretsPASSWORD = PASSWORD
 
+
+#
+# display setup
+#
 def setSelectDisplay(displayVersion1, nPub, displayVersion2):
     global npub
     npub = nPub
@@ -61,13 +59,13 @@ def setSelectDisplay(displayVersion1, nPub, displayVersion2):
     global dispVersion
     dispVersion = [displayVersion1, displayVersion2]
 
-
-def setSecrets(SSID, PASSWORD):
-    global secretsSSID
-    global secretsPASSWORD
-    secretsSSID = SSID
-    secretsPASSWORD = PASSWORD
-
+def displayInit():
+    refresh(ssd, True)
+    ssd.wait_until_ready()
+    ssd._full = False
+    refresh(ssd, True)
+    ssd.wait_until_ready()
+    ssd.sleep()  # deep sleep
 
 def nextDispVersion(_next=True):
     def is_last_value(a_value, a_list):
@@ -91,16 +89,50 @@ def nextDispVersion(_next=True):
             break
 
 
-def displayInit():
-    refresh(ssd, True)
-    ssd.wait_until_ready()
-    #time.sleep(5)
-    ssd._full = False
-    #ssd.wait_until_ready()
-    refresh(ssd, True)
-    ssd.wait_until_ready()
-    ssd.sleep()  # deep sleep
-    #time.sleep(5)
+#
+# functions that return "displayable" strings from datastore
+#
+def getMoscowTime():
+    return str(int(100000000 / float(datastore.get_price("USD"))))
+
+def getPriceDisplay(currency):
+    price_str = f"{datastore.get_price(currency):,}"
+    if currency == "EUR":
+        price_str = price_str.replace(",", ".")
+    return price_str
+
+def getLastBlock():
+    return str(datastore.get_height())
+
+def getMempoolFeesString():
+    mempoolFees = datastore.get_fees_dict()
+    mempoolFeesString = (
+        "L:"
+        + str(mempoolFees["hourFee"])
+        + " M:"
+        + str(mempoolFees["halfHourFee"])
+        + " H:"
+        + str(mempoolFees["fastestFee"])
+    )
+    return mempoolFeesString
+
+def getNostrZapCount():
+    return str(datastore.get_nostr_zap_count())
+
+def getNextHalving():
+    return str(210000 - datastore.get_height() % 210000)
+
+def getHashrateDisplay():
+    return "{:0.1f}e18".format(datastore.get_mining("currentHashrate") / 10**18)
+
+def getDifficultyDisplay():
+    return "{:0.2f}e12".format(datastore.get_mining("currentDifficulty") / 10**12)
+
+def getNextDifficultyAdjustment():
+    return str(2016 - datastore.get_height() % 2016)
+
+def getUSTotalPublicDebtOutstandingDisplay():
+    return "{:0.2f}e12".format(datastore.get_usdebt("tot_pub_debt_out_amt") / 10**12)
 
 
 def debugConsoleOutput(id):
@@ -118,7 +150,6 @@ def main():
     global wifi
     global secretsSSID
     global secretsPASSWORD
-    global data
     debugConsoleOutput("1")
     issue = False
     blockHeight = ""
@@ -127,9 +158,9 @@ def main():
     i = 1
     connectWIFI()
 
-    data = getDataSingleton()
+    datastore.initialize()
     if npub:
-        setNostrPubKey(nPub)
+        datastore.set_nostr_pubkey(npub)
 
     displayInit()
     while True:
@@ -139,29 +170,26 @@ def main():
         if i > 72*20:
             i = 1
             refresh(ssd, True)  # awake from deep sleep
-            #time.sleep(5)
             ssd._full = True
             ssd.wait_until_ready()
             refresh(ssd, True)
             ssd.wait_until_ready()
-            #time.sleep(20)
             ssd._full = False
             ssd.wait_until_ready()
             refresh(ssd, True)
-            #time.sleep(5)
         try:
             if dispVersion[0] == "zap":
                 symbolRow1 = "F"
-                blockHeight = str(getNostrZapCount(npub))
-            if dispVersion[0] == "hal":
+                blockHeight = str(getNostrZapCount())
+            elif dispVersion[0] == "hal":
                 symbolRow1 = "E"
-                blockHeight = str(getNextHalving())
+                blockHeight = getNextHalving()
             elif dispVersion[0] == "nda":
                 symbolRow1 = "G"
-                blockHeight = str(getNextDifficultyAdjustment())
+                blockHeight = getNextDifficultyAdjustment()
             else:
                 symbolRow1 = "A"
-                blockHeight = str(getLastBlock())
+                blockHeight = getLastBlock()
         except Exception as err:
             blockHeight = "connection error"
             symbolRow1 = ""
@@ -171,10 +199,10 @@ def main():
         try:
             if dispVersion[1] == "mt":
                 symbolRow2 = ""
-                textRow2 = str(getMoscowTime())
+                textRow2 = getMoscowTime()
             elif dispVersion[1] == "mts2":
                 symbolRow2 = "I"
-                textRow2 = str(getMoscowTime())
+                textRow2 = getMoscowTime()
             elif dispVersion[1] == "fp1":
                 symbolRow2 = "K"
                 textRow2 = getPriceDisplay("USD")
@@ -192,7 +220,7 @@ def main():
                 textRow2 = getUSTotalPublicDebtOutstandingDisplay()
             else:
                 symbolRow2 = "H"
-                textRow2 = str(getMoscowTime())
+                textRow2 = getMoscowTime()
         except Exception as err:
             textRow2 = "error"
             symbolRow2 = ""
@@ -259,15 +287,9 @@ def main():
                     nack_press()
                     continue
 
-                new_data = False
-                for key, datum in data.items():
-                    result = datum.refresh()
-                    if result == False:
-                        print("data[{}].refresh() returned False".format(key))
-                    elif result == True:
-                        new_data = True
-                        print("{} data changed".format(key))
+                new_data = datastore.refresh()
                 if new_data:
+                    print("datastore.refresh() had updates: {}".format(",".join(new_data)))
                     break
         else:
             wifi.disconnect()

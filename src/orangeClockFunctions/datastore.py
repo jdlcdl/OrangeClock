@@ -47,86 +47,68 @@ class ExternalData:
 
         return answer
 
-
-def getMoscowTime():
-    return int(100000000 / float(getPrice("USD")))
-
-def getPriceDisplay(currency):
-    price_str = f"{getPrice(currency):,}"
-    if currency == "EUR":
-        price_str = price_str.replace(",", ".")
-    return price_str
-
-def getHashrateDisplay():
-    # need more fonts for below "E","H","/","s"
-    #return "{:0.1f} EH/s".format(getCurrentHashrate() / 10**18)
-    return "{:0.1f}e18".format(getCurrentHashrate() / 10**18)
+#
+# _extdata is a singleton dict holding ExternalData instances -- used internally
+#
+_extdata = None
 
 
-def getDifficultyDisplay():
-    # need more fonts for below "T"
-    #return "{:0.2f}T".format(getCurrentDifficulty() / 10**12)
-    return "{:0.2f}e12".format(getCurrentDifficulty() / 10**12)
+#
+# functions for updating the _extdata singleton
+#
 
-def getUSTotalPublicDebtOutstandingDisplay():
-    return "{:0.2f}e12".format(getUSTotalPublicDebtOutstanding() / 10**12)
+def initialize():
+    global _extdata
+    _extdata = {
+        "prices": ExternalData("https://mempool.space/api/v1/prices", 300),
+        "fees": ExternalData("https://mempool.space/api/v1/fees/recommended", 120),
+        "height": ExternalData("https://mempool.space/api/blocks/tip/height", 180, json=False),
+        "mining": ExternalData("https://mempool.space/api/v1/mining/hashrate/3d", 180),
+        "usdebt": ExternalData("https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v2/accounting/od/debt_to_penny?fields=tot_pub_debt_out_amt,record_date&sort=-record_date&page[size]=1", 86400),
+    }
 
-def getMempoolFeesString():
-    mempoolFees = getMempoolFees()
-    mempoolFeesString = (
-        "L:"
-        + str(mempoolFees["hourFee"])
-        + " M:"
-        + str(mempoolFees["halfHourFee"])
-        + " H:"
-        + str(mempoolFees["fastestFee"])
-    )
-    return mempoolFeesString
+def set_nostr_pubkey(npub):
+    _extdata['zaps'] = ExternalData("https://api.nostr.band/v0/stats/profile/"+npub, 300)
 
-def getNextHalving():
-    return 210000 - getLastBlock() % 210000
-
-def getNextDifficultyAdjustment():
-    return 2016 - getLastBlock() % 2016
-
-
-# _data is a singleton dict holding raw data from sources -- used internally,
-# else use getDataSingleton()
-_data = None
-
-def getLastBlock():
-    return int(_data["height"].data)
-
-def getPrice(currency): # change USD to EUR for price in euro
-    return _data["prices"].data[currency]
-
-def getMempoolFees():
-    return _data["fees"].data
-
-def getCurrentHashrate():
-    return _data['mining'].data["currentHashrate"]
-
-def getCurrentDifficulty():
-    return _data['mining'].data["currentDifficulty"]
-
-def getUSTotalPublicDebtOutstanding():
-    return int(float(_data['usdebt'].data["data"][0]["tot_pub_debt_out_amt"]))
-
-def getNostrZapCount(nPub):
-    return _data["zaps"].data["stats"][str(_data.json())[12:76]]["zaps_received"]["count"]
-
-def setNostrPubKey(nPub):
-    _data['zaps'] = ExternalData("https://api.nostr.band/v0/stats/profile/"+nPub, 300)
+def refresh(raise_on_failure=False):
+    refreshed = []
+    failures = []
+    for key, datum in _extdata.items():
+        result = datum.refresh()
+        if result == False:
+            failures.append(key)
+        elif result == True:
+            refreshed.append(key)
+        else:
+            pass # no change
+    if failures:
+        msg = "datastore.refresh() had failures: {}".format(",".join(failures))
+        if raise_on_failure:
+            raise Exception(msg)
+        else:
+            print(msg)
+    return refreshed
 
 
-def getDataSingleton():
-    global _data
-    if _data == None:
-        _data = {
-            "prices": ExternalData("https://mempool.space/api/v1/prices", 300),
-            "fees": ExternalData("https://mempool.space/api/v1/fees/recommended", 120),
-            "height": ExternalData("https://mempool.space/api/blocks/tip/height", 180, json=False),
-            "mining": ExternalData("https://mempool.space/api/v1/mining/hashrate/3d", 180),
-            "usdebt": ExternalData("https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v2/accounting/od/debt_to_penny?fields=tot_pub_debt_out_amt,record_date&sort=-record_date&page[size]=1", 86400),
-        }
-    return _data
+#
+# functions for getting "raw" values from the _extdata singleton
+#
+
+def get_height():
+    return int(_extdata["height"].data)
+
+def get_price(key): # USD, EUR
+    return _extdata["prices"].data[key]
+
+def get_fees_dict():
+    return _extdata["fees"].data
+
+def get_mining(key): # currentHashrate, currentDifficulty
+    return _extdata["mining"].data[key]
+
+def get_usdebt(key): # tot_pub_debt_out_amt
+    return int(float(_extdata['usdebt'].data["data"][0][key]))
+
+def get_nostr_zap_count():
+    pubkey = [x for x in _extdata["zaps"].data['stats'].keys()][0]
+    return _extdata["zaps"].data["stats"][pubkey]["zaps_received"]["count"]
