@@ -1,5 +1,6 @@
 import time
 import requests
+from orangeClockFunctions.logging import log_exception
 
 
 class ExternalData:
@@ -34,6 +35,7 @@ class ExternalData:
                 data = self.data
                 answer = False
         except Exception as err:
+            log_exception(err)
             print("Exception {}: requests.get({})".format(err, self.url))
             data = self.data
             answer = False

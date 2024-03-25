@@ -9,6 +9,7 @@ from drivers.pico_hardware import (
 )
 from orangeClockFunctions.compositors import composeClock, composeSetup
 from orangeClockFunctions import datastore
+from orangeClockFunctions.logging import log_exception
 
 import network
 import time
@@ -191,6 +192,7 @@ def main():
                 symbolRow1 = "A"
                 blockHeight = getLastBlock()
         except Exception as err:
+            log_exception(err)
             blockHeight = "connection error"
             symbolRow1 = ""
             print("Block: Handling run-time error:", err)
@@ -222,6 +224,7 @@ def main():
                 symbolRow2 = "H"
                 textRow2 = getMoscowTime()
         except Exception as err:
+            log_exception(err)
             textRow2 = "error"
             symbolRow2 = ""
             print("Moscow: Handling run-time error:", err)
@@ -231,6 +234,7 @@ def main():
             symbolRow3 = "C"
             mempoolFees = getMempoolFeesString()
         except Exception as err:
+            log_exception(err)
             mempoolFees = "connection error"
             symbolRow3 = ""
             print("Fees: Handling run-time error:", err)
