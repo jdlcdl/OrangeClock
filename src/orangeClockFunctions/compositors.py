@@ -27,12 +27,13 @@ def _setup(ssd):
 
 
 # compose three horizontally-centered rows, each having text + icon
-def composeClock(ssd, first, second, third):
+def composeClock(ssd, first, second, third, show_warning=False):
     """
-    pass: ssd, first, second, and third 
+    pass: ssd, first, second, and third
     where ssd is the display instance and first, second, third are
     tuples of (text, icon), where text and icon are the 
     text string and icon char to be rendered.
+    optionally: pass show_warning to display a warning icon (ie: stale data)
 
     returns list of Labels
     """
@@ -52,6 +53,11 @@ def composeClock(ssd, first, second, third):
     spacings = (4, 0, 4)
 
     labels = []
+
+    # if show_warning: lay it down before others layers.
+    if show_warning:
+        labels.append(Label(icon_writers[0], 0, 0, "O"))
+
     for i, (text, icon) in enumerate([first, second, third]):
         icon_width = icon_writers[i].stringlen(icon)
         text_width = text_writers[i].stringlen(text)

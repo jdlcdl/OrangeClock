@@ -245,7 +245,8 @@ def main():
             ssd,
             (blockHeight, symbolRow1),
             (textRow2, symbolRow2),
-            (mempoolFees, symbolRow3)
+            (mempoolFees, symbolRow3),
+            show_warning = bool(datastore.list_stale())
         )
 
         refresh(ssd, False)
