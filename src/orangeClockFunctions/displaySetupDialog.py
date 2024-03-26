@@ -16,9 +16,9 @@ def main():
 
     composeSetup(
         ssd,
-        (setupTxt, "J"),
-        (wifiTxt, "L"),
-        (URITxt, "D")
+        (setupTxt, "N"),
+        (wifiTxt, "O"),
+        (URITxt, "G")
     )
 
     ssd.wait_until_ready()

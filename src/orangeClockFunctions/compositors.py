@@ -56,7 +56,7 @@ def composeClock(ssd, first, second, third, show_warning=False):
 
     # if show_warning: lay it down before others layers.
     if show_warning:
-        labels.append(Label(icon_writers[0], 0, 0, "O"))
+        labels.append(Label(icon_writers[0], 0, 0, "R"))
 
     for i, (text, icon) in enumerate([first, second, third]):
         icon_width = icon_writers[i].stringlen(icon)

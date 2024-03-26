@@ -21,8 +21,8 @@ import math
 
 refresh_interval = 30
 symbolRow1 = "A"
-symbolRow2 = "H"
-symbolRow3 = "C"
+symbolRow2 = "L"
+symbolRow3 = "F"
 secretsSSID = ""
 secretsPASSWORD = ""
 npub = ""
@@ -180,10 +180,10 @@ def main():
             refresh(ssd, True)
         try:
             if dispVersion[0] == "zap":
-                symbolRow1 = "F"
+                symbolRow1 = "I"
                 blockHeight = str(getNostrZapCount())
             elif dispVersion[0] == "hal":
-                symbolRow1 = "E"
+                symbolRow1 = "H"
                 blockHeight = getNextHalving()
             elif dispVersion[0] == "nda":
                 symbolRow1 = "G"
@@ -203,10 +203,10 @@ def main():
                 symbolRow2 = ""
                 textRow2 = getMoscowTime()
             elif dispVersion[1] == "mts2":
-                symbolRow2 = "I"
+                symbolRow2 = "M"
                 textRow2 = getMoscowTime()
             elif dispVersion[1] == "fp1":
-                symbolRow2 = "K"
+                symbolRow2 = "E"
                 textRow2 = getPriceDisplay("USD")
             elif dispVersion[1] == "fp2":
                 symbolRow2 = "B"
@@ -221,7 +221,7 @@ def main():
                 symbolRow2 = "K"
                 textRow2 = getUSTotalPublicDebtOutstandingDisplay()
             else:
-                symbolRow2 = "H"
+                symbolRow2 = "L"
                 textRow2 = getMoscowTime()
         except Exception as err:
             log_exception(err)
@@ -231,7 +231,7 @@ def main():
             debugConsoleOutput("4")
             issue = True
         try:
-            symbolRow3 = "C"
+            symbolRow3 = "F"
             mempoolFees = getMempoolFeesString()
         except Exception as err:
             log_exception(err)
