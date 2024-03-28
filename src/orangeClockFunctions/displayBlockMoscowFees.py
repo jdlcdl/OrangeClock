@@ -19,7 +19,7 @@ import gc
 import math
 
 
-refresh_interval = 30
+refresh_interval = 180
 symbolRow1 = "A"
 symbolRow2 = "L"
 symbolRow3 = "F"
@@ -41,7 +41,7 @@ def connectWIFI():
     wifi.active(True)
     wifi.connect(secretsSSID, secretsPASSWORD)
     time.sleep(1)
-    print(wifi.isconnected())
+    print("wifi connected: {}".format(wifi.isconnected()))
 
 def setSecrets(SSID, PASSWORD):
     global secretsSSID
@@ -139,11 +139,12 @@ def getUSTotalPublicDebtOutstandingDisplay():
 def debugConsoleOutput(id):
     mem_alloc = gc.mem_alloc()
     print("=============== debug id=" + id + " ===============")
+    print("{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}".format(*time.gmtime()[:-2]))
     print("memory used: ", mem_alloc / 1024, "KiB")
     print("memory free: ", gc.mem_free() / 1024, "KiB")
     gc.collect()
     print("gc.collect() freed additional:", (mem_alloc - gc.mem_alloc()) / 1024, "KiB")
-    print("=============== end debug ===============")
+    print("=============== end debug ===============\n")
 
 
 def main():
@@ -290,7 +291,7 @@ def main():
                     return				
                 else:
                     nack_press()
-                    continue
+                    pass
 
                 new_data = datastore.refresh()
                 if new_data:

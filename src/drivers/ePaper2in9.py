@@ -87,7 +87,7 @@ class EPD(framebuf.FrameBuffer):
         cmd(b'\x4F', b'\x00\x00')
         self.wait_until_ready()
 
-        print('Init Done.')
+        #print('Init Done.')
 
     def init_partial(self):
         # Hardware reset
@@ -138,7 +138,7 @@ class EPD(framebuf.FrameBuffer):
         while not self.ready():  
             sleep_ms(100)
         dt = ticks_diff(ticks_ms(), t)
-        print('wait_until_ready {}ms {:5.1f}mins'.format(dt, dt/60_000))
+        #print('wait_until_ready {}ms {:5.1f}mins'.format(dt, dt/60_000))
 
     async def wait(self):
         await asyncio.sleep_ms(0)  # Ensure tasks run that might make it unready
@@ -199,11 +199,11 @@ class EPD(framebuf.FrameBuffer):
         self._updated.set()  # framebuf has now been copied to the device
         self._updated.clear()
         if self._full:
-            print('async full refresh')
+            #print('async full refresh')
             cmd(b'\x22', b'\xF7')
             cmd(b'\x20')  # DISPLAY_REFRESH
         else:
-            print('async partial refresh')
+            #print('async partial refresh')
             cmd(b'\x22', b'\x0F')
             cmd(b'\x20')  # DISPLAY_REFRESH
         await asyncio.sleep(1)
@@ -259,15 +259,15 @@ class EPD(framebuf.FrameBuffer):
                 self._cs(1)
 
         if self._full:
-            print('sync full refresh')
+            #print('sync full refresh')
             cmd(b'\x22', b'\xF7')
             cmd(b'\x20')  # DISPLAY_REFRESH
         else:
-            print('sync partial refresh')
+            #print('sync partial refresh')
             cmd(b'\x22', b'\x0F')
             cmd(b'\x20')  # DISPLAY_REFRESH
         te = ticks_us()
-        print('show time', ticks_diff(te, t)//1000, 'ms')
+        #print('show time', ticks_diff(te, t)//1000, 'ms')
         if not self.demo_mode:
             # Immediate return to avoid blocking the whole application.
             # User should wait for ready before calling refresh()
