@@ -106,20 +106,26 @@ def list_stale():
     return [k for k,v in _extdata.items() if v.stale]
 
 def get_height():
-    return int(_extdata["height"].data)
+    if "height" in _extdata:
+        return int(_extdata["height"].data)
 
 def get_price(key): # USD, EUR
-    return _extdata["prices"].data[key]
+    if "prices" in _extdata:
+        return _extdata["prices"].data[key]
 
 def get_fees_dict():
-    return _extdata["fees"].data
+    if "fees" in _extdata:
+        return _extdata["fees"].data
 
 def get_mining(key): # currentHashrate, currentDifficulty
-    return _extdata["mining"].data[key]
+    if "mining" in _extdata:
+        return _extdata["mining"].data[key]
 
 def get_usdebt(key): # tot_pub_debt_out_amt
-    return int(float(_extdata['usdebt'].data["data"][0][key]))
+    if "usdebt" in _extdata:
+        return int(float(_extdata['usdebt'].data["data"][0][key]))
 
 def get_nostr_zap_count():
-    pubkey = [x for x in _extdata["zaps"].data['stats'].keys()][0]
-    return _extdata["zaps"].data["stats"][pubkey]["zaps_received"]["count"]
+    if "zaps" in _extdata:
+        pubkey = [x for x in _extdata["zaps"].data['stats'].keys()][0]
+        return _extdata["zaps"].data["stats"][pubkey]["zaps_received"]["count"]
