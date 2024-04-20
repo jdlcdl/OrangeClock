@@ -26,6 +26,12 @@ def _setup(ssd):
     wri_small = Writer(ssd, small, verbose=False)
 
 
+def center_x_offset(screen_width, text_width):
+    x_offset = None
+    if text_width <= screen_width:
+        x_offset = (screen_width - text_width) // 2
+    return x_offset
+
 # compose three horizontally-centered rows, each having text + icon
 def composeClock(ssd, first, second, third, show_warning=False):
     """
@@ -62,21 +68,26 @@ def composeClock(ssd, first, second, third, show_warning=False):
         icon_width = icon_writers[i].stringlen(icon)
         text_width = text_writers[i].stringlen(text)
 
-        # write the text
-        labels.append(Label(
-            text_writers[i],
-            text_y_offsets[i],
-            (ssd.width - text_width + icon_width + spacings[i]) // 2,
-            text
-        ))
-
         # write the icon
-        labels.append(Label(
-            icon_writers[i],
-            icon_y_offsets[i],
-            (ssd.width - text_width - icon_width - spacings[i]) // 2,
-            icon
-        ))
+        x_offset = center_x_offset(ssd.width, icon_width + spacings[i] + text_width)
+        if x_offset is not None:
+            labels.append(
+                Label(icon_writers[i], icon_y_offsets[i], x_offset, icon)
+            )
+        else:
+            print(f"icon would be offscreen: {icon}")
+
+        # write the text
+        if x_offset is not None:
+            x_offset = x_offset + icon_width + spacings[i]
+        else:
+            x_offset = center_x_offset(ssd.width, text_width)
+        if x_offset is not None:
+            labels.append(
+                Label(text_writers[i], text_y_offsets[i], x_offset, text)
+            )
+        else:
+            print(f"text would be offscreen: {text}")
 
     return labels
 
