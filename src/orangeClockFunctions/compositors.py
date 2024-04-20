@@ -82,12 +82,15 @@ def composeClock(ssd, first, second, third, show_warning=False):
             x_offset = x_offset + icon_width + spacings[i]
         else:
             x_offset = center_x_offset(ssd.width, text_width)
-        if x_offset is not None:
-            labels.append(
-                Label(text_writers[i], text_y_offsets[i], x_offset, text)
-            )
-        else:
-            print(f"text would be offscreen: {text}")
+            while x_offset is None and len(text):
+                text = text[:-1]
+                text_width = text_writers[i].stringlen(text + "...")
+                x_offset = center_x_offset(ssd.width, text_width)
+                if x_offset is not None:
+                    text += "..."
+        labels.append(
+            Label(text_writers[i], text_y_offsets[i], x_offset, text)
+        )
 
     return labels
 
