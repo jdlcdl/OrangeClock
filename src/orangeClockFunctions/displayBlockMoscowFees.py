@@ -6,6 +6,8 @@ from drivers.pico_hardware import (
     ack_double_press,
     ack_long_press,
     nack_press,
+    ack_data_updated,
+    ack_data_errors,
 )
 from orangeClockFunctions.compositors import composeClock, composeSetup
 from orangeClockFunctions import datastore
@@ -294,7 +296,11 @@ def main():
                     pass
 
                 new_data = datastore.refresh()
+                if datastore.list_stale():
+                    ack_data_errors()
                 if new_data:
+                    if "height" in new_data:
+                        ack_data_updated()
                     print("datastore.refresh() had updates: {}".format(",".join(new_data)))
                     break
         else:
