@@ -1,7 +1,7 @@
 import orangeClockFunctions.displayBlockMoscowFees as orangeClock
 import orangeClockFunctions.displaySetupDialog as setupDialog
 from orangeClockFunctions.logging import log_exception
-from phew import access_point, connect_to_wifi, is_connected_to_wifi, dns, server
+from phew import access_point, connect_to_wifi, is_connected_to_wifi, dns, ntp, server
 from phew.template import render_template
 import json
 import machine
@@ -95,6 +95,8 @@ try:
             print(wifi_credentials)
             os.remove(WIFI_FILE)
             machine_reset()
+        else:
+            ntp.fetch(synch_with_rtc=True)
 
         print(f"Connected to wifi, IP address {ip_address}")
         application_mode()
