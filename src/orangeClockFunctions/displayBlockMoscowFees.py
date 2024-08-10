@@ -332,6 +332,7 @@ def main():
                     if "height" in new_data:
                         ack_data_updated()
                     print("datastore.refresh() had updates: {}".format(",".join(new_data)))
+                if datastore.list_stale() or new_data:
                     break
         else:
             wifi.disconnect()
