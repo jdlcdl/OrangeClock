@@ -31,9 +31,10 @@ def connect_to_wifi(ssid, password, timeout_seconds=30):
     network.STAT_CONNECTING: "connecting",
     network.STAT_WRONG_PASSWORD: "wrong password",
     network.STAT_NO_AP_FOUND: "access point not found",
-    network.STAT_CONNECT_FAIL: "connection failed",
     network.STAT_GOT_IP: "got ip address"
   }
+  try: status[network.STAT_CONNECT_FAIL] = "connection failed"
+  except: pass
 
   wlan = network.WLAN(network.STA_IF)
   wlan.active(True)    
