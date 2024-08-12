@@ -39,8 +39,11 @@ def connectWIFI():
     global wifi
     wifi = network.WLAN(network.STA_IF)
     wifi.active(True)
-    wifi.connect(secretsSSID, secretsPASSWORD)
-    time.sleep(1)
+    if wifi.status() == network.STAT_IDLE: 
+        wifi.connect(secretsSSID, secretsPASSWORD)
+        time.sleep(1)
+    elif wifi.status() == network.STAT_CONNECTING:
+        time.sleep(1)
     print(wifi.isconnected())
 
 
